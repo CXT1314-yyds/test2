@@ -1,8 +1,5 @@
 #include<bits/stdc++.h>
-#include <bits/extc++.h>
 using namespace std;
-using namespace __gnu_cxx;
-using namespace __gnu_pbds;
 #define IOS ios_base::sync_with_stdio(0),cin.tie(0),cout.tie(0);
 using ll = long long;
 using db = double;
@@ -18,56 +15,91 @@ using ull = unsigned long long;
 #define int long long
 #define pii pair<int , int>
 
-ostream &operator<<(ostream &os, int128 num) {
-    if (num == 0) return os << "0";
-    str s;
-    while (num > 0) {
-        s.push_back(static_cast<char>(48 + num % 10));
-        num /= 10;
-    }
-    ranges::reverse(s);
-    return os << s;
-}
-
-int a[30][30], v[30], mi[30];
-unmap<int, int> mp[30];
-
+constexpr int inf = 1e9;
 signed main() {
-    IOS
+	IOS
     int n, m;
     cin >> n >> m;
-    for (int i = 1; i <= n; i++)
-        for (int j = 1; j <= m; j++)
+    vec a(n, vec<int>(m));
+    for (int i = 0; i < n; i++)
+        for (int j = 0; j < m; j++)
             cin >> a[i][j];
-    bool f = false;
-    for (int i = 1; i <= n; i++) {
-        for (int j = i + 1; j <= n; j++) {
-            for (int k = 1; k <= m; k++) {
+    vec<int> ans(n, -1);
+    for (int i = 0; i < n; i++) {
+        bool f1 = false;
+        for (int j = 0; j < n; j++) {
+            if (j == i) continue;
+            bool f2 = true;
+            for (int k = 0; k < m; k++) {
                 if (a[i][k] != a[j][k]) {
-                    f = true;
+                    f2 = false;
                     break;
                 }
             }
-            if (!f) {
-                v[i] = -1;
-                v[j] = -1;
+            if (f2) {
+                f1 = true;
+                break;
             }
         }
-    }
-    for (int j = 1 ; j <= m ; j++) {
-        for (int i = 1 ; i <= n ; i++) {
-            mp[j][a[i][j]]++;
+        if (f1) {
+            ans[i] = -1;
+            continue;
         }
-    }
-    for (int i = 1 ; i <= n ; i++) {
-        if (v[i] == -1) cout << -1 << ' ';
-        else {
-            int mi = -1e9;
-            for (int j = 1 ; j <= m ; j++) {
-                mi = max(mi , mp[j][a[i][j]]);
+
+        vec<vec<int>> o;
+        for (int j = 0; j < n; j++) {
+            if (j != i) {
+                o.push_back(a[j]);
             }
-            cout << mi << ' ';
         }
+        const int sz = static_cast<int>(o.size());
+        if (sz == 0) {
+            ans[i] = 0;
+            continue;
+        }
+
+        vec<int> all(m, 0);
+        for (int x = 0; x < m; x++) {
+            int T_x = 0;
+            for (int j = 0; j < sz; j++) {
+                if (o[j][x] != a[i][x]) {
+                    T_x |= 1 << j;
+                }
+            }
+            all[x] = T_x;
+        }
+
+        const int ma = (1 << sz) - 1;
+        vec dp(1 << sz, inf);
+        vec<int> cnt(1 << sz, 0);
+        vec<vec<int>> g(sz + 1);
+
+        for (int msk = 0; msk < (1 << sz); msk++) {
+            const int c = __builtin_popcount(msk);
+            cnt[msk] = c;
+            g[c].push_back(msk);
+        }
+
+        dp[0] = 0;
+        for (int k = 0; k <= sz; k++) {
+            for (const int msk : g[k]) {
+                if (k == 0) continue;
+                dp[msk] = inf;
+                for (int x = 0; x < m; x++) {
+                    const int new_m = msk & (~all[x]);
+                    if (new_m == msk) continue;
+                    if (dp[new_m] + 1 < dp[msk]) {
+                        dp[msk] = dp[new_m] + 1;
+                        if (dp[msk] == 1) break;
+                    }
+                }
+            }
+        }
+        ans[i] = dp[ma];
+    }
+
+    for (int i = 0; i < n; i++) {
+        cout << ans[i] << " ";
     }
     return 0;
 }
